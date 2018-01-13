@@ -33,6 +33,7 @@ git clone https://github.com/MarcCoru/tensorflow-convlstm-cell.git utils/convrnn
 Python packages
 ```bash
 conda install -y gdal
+pip install tensorflow-gpu=1.4
 pip install psycopg2
 pip install configobj
 pip install matplotlib
@@ -61,9 +62,7 @@ nvidia-docker run -ti -v $PWD/data_IJGI18:/MTLCC/data_IJGI18 -p 8888:8888 marcco
 
 ## Network training and evaluation
 
-### on local machine (requires dependencies)
-
-build network with 24 10m pixel graph
+### on local machine (requires dependencies installed)
 
 #### build the network graph for 24px tiles
 ```bash
