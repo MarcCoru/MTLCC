@@ -1,0 +1,30 @@
+COPY(
+SELECT 
+    encode(
+	select st_astiff(
+    		st_clip(
+    		st_union(
+        	st_asraster(st_intersection(t.geom,l.geom), 
+            	10::float,10::float,st_xmin(t.geom)::float, st_xmax(t.geom)::float,'8BUI',l.labelid,-9999)
+    		)select st_astiff(
+    st_clip(
+    st_union(
+        st_asraster(st_intersection(t.geom,l.geom), 
+            10::float,10::float,st_xmin(t.geom)::float, st_xmax(t.geom)::float,'8BUI',l.labelid,-9999)
+    ),
+    t.geom, -9999)
+    )
+    from {tiletable} t, {fieldtable} l 
+    where t.id={tileid} and ST_Intersects(t.geom, l.geom)
+    group by t.geom
+	,'hex')
+        from
+            bavaria r, tiles240 t
+        where
+            t.id=1 and
+            ST_INTERSECTS(r.rast,t.geom) and
+            r.type='10m' and
+            r.level='L1C' and
+            date='2016-08-28'::date
+)
+TO STDOUT;
