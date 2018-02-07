@@ -8,13 +8,20 @@ A recurrent neural network approach to encode multi-temporal data for land cover
 
 Bidirectional rnn encoder and convolutional softmax classifier, as described in the paper.
 
-##### Source code of Rußwurm & Körner (2018) at [TBD]()
+##### Source code of Rußwurm & Körner (2018) [PDF](https://arxiv.org/abs/1802.02080)
 
 If you use this repository consider citing
 ```
 Rußwurm M., Körner M. (2018). Multi-Temporal Land Cover Classification with
+Sequential Recurrent Encoders. Arxiv, 2018.
+```
+
+<!--
+```
+Rußwurm M., Körner M. (2018). Multi-Temporal Land Cover Classification with
 Sequential Recurrent Encoders. ISPRS International Journal of Geo-Information, 2018.
 ```
+-->
 
 The `Tensorflow 1.4` code of the network is located at `modelzoo/seqencmodel.py`
 Further scripts for training and evaluation are provided.
