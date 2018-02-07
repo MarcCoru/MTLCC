@@ -35,7 +35,7 @@ Encodeing RNN:
 
 Network structure
 <p align="center">
-  <img width="600" src="doc/network.png">
+  <img src="doc/network.png">
 </p>
 Bidirectional rnn encoder and convolutional softmax classifier, as described in the paper.
 
