@@ -2,12 +2,6 @@
 
 A recurrent neural network approach to encode multi-temporal data for land cover classification.
 
-<p align="center">
-  <img src="doc/network.png">
-</p>
-
-Bidirectional rnn encoder and convolutional softmax classifier, as described in the paper.
-
 ##### Source code of Rußwurm & Körner (2018) [PDF](https://arxiv.org/abs/1802.02080)
 
 If you use this repository consider citing
@@ -29,6 +23,21 @@ Additionally, `Jupyter` notebooks used for accuracy evaluation and extraction of
 The code can be executed after downloading the demo data.
 After installing the dependencies the python scripts should be executable.
 Additionally, we provided a `docker` image with all dependencies already installed.
+
+## Network
+
+Similar to an encoding rnn layer of [sequence-to-sequence](https://www.tensorflow.org/tutorials/seq2seq) a variable-length input sequence of images is encoded to intermediate reprentation.
+
+Encodeing RNN:
+<p align="center">
+<img src="doc/lstm.gif" width="300" />
+</p>
+
+Network structure
+<p align="center">
+  <img src="doc/network.png">
+</p>
+Bidirectional rnn encoder and convolutional softmax classifier, as described in the paper.
 
 ## Dependencies
 
