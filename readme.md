@@ -30,12 +30,12 @@ Similar to an encoding rnn layer of [sequence-to-sequence](https://www.tensorflo
 
 Encodeing RNN:
 <p align="center">
-<img src="doc/lstm.gif" width="300" />
+<img src="doc/lstm.gif" width="500" />
 </p>
 
 Network structure
 <p align="center">
-  <img src="doc/network.png">
+  <img width="600" src="doc/network.png">
 </p>
 Bidirectional rnn encoder and convolutional softmax classifier, as described in the paper.
 
