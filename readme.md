@@ -28,7 +28,7 @@ Additionally, we provided a `docker` image with all dependencies already install
 
 Similar to an encoding rnn layer of [sequence-to-sequence](https://www.tensorflow.org/tutorials/seq2seq) a variable-length input sequence of images is encoded to intermediate reprentation.
 
-Encodeing RNN:
+Encoding LSTM-RNN:
 <p align="center">
 <img src="doc/lstm.gif" width="500" />
 </p>
