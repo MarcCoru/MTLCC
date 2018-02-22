@@ -59,7 +59,7 @@ pip install configparser
 
 ## Download demo data
 
-download demo data to make the following commands runnable
+download demo data (requirement to run the following commands)
 
 ```bash
 bash download.sh
@@ -123,7 +123,7 @@ python copy_network_weights.py tmp/convgru128 tmp/convgru128_48px
 ```
 
 #### evaluate the model
-(writes prediction pngs and statistics on accuracy)
+(writes prediction pngs and statistics on accuracy to `tmp/eval/24`)
 ```bash
 python evaluate.py tmp/convgru128 \
     --datadir data_/datasets/240 \
@@ -169,9 +169,9 @@ dockercmd python evaluate.py /model/convgru128 \
 
 ## Extract Activations
 
-This a scripted version from the Activations section of `NetworkVisualization.ipynb`
+`activations.py` is a scripted version from the activations section of `NetworkVisualization.ipynb`
 
-extract internal activation images as pngs to `tmp` folder
+to extract internal activation images from tile `16494` as pngs to `tmp/activations` folder run
 
 ```bash
 python activations.py \
