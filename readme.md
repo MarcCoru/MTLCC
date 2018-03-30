@@ -7,7 +7,7 @@ A recurrent neural network approach to encode multi-temporal data for land cover
 If you use this repository consider citing
 ```
 Rußwurm M., Körner M. (2018). Multi-Temporal Land Cover Classification with
-Sequential Recurrent Encoders. ISPRS International Journal of Geo-Information, 7(4), 129..
+Sequential Recurrent Encoders. ISPRS International Journal of Geo-Information, 7(4), 129.
 ```
 
 
