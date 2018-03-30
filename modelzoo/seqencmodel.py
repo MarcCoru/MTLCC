@@ -18,7 +18,7 @@ ADVANCED_SUMMARY_COLLECTION_NAME="advanced_summaries"
 tf.app.flags.DEFINE_string("modelfolder", None, "target location of graph on disk")
 
 ## hyper parameters ##
-tf.app.flags.DEFINE_string("kernel", (1,3,3), "kernel of convolutions")
+tf.app.flags.DEFINE_string("kernel", "(1,3,3)", "kernel of convolutions")
 tf.app.flags.DEFINE_string("classkernel", "(3,3)", "kernelsize of final classification convolution")
 tf.app.flags.DEFINE_string("cnn_activation", "leaky_relu", "activation function for convolutional layers ('relu' or 'leaky_relu' [default])")
 
@@ -131,8 +131,18 @@ class Model():
 
             # write FLAGS to file
             cfg = configparser.ConfigParser()
-            cfg["model"] = {"model": os.path.basename(__file__)}
-            cfg["flags"] = FLAGS.__dict__["__flags"]
+
+            # TF 1.4
+            #cfg["model"] = {"model": os.path.basename(__file__)}
+            #cfg["flags"] = FLAGS.__dict__["__flags"]
+
+            # TF 1.7
+            flags_dict = dict()
+            for name in FLAGS:
+                flags_dict[name]=str(FLAGS[name].value)
+
+            cfg["flags"] = flags_dict # FLAGS.__flags #  broke tensorflow=1.5
+
 
             path=os.path.join(modelpath, MODEL_CFG_FILENAME)
             print("writing parameters to {}".format(path))
@@ -151,7 +161,7 @@ class Model():
         #output_shapes = tf.placeholder_with_default(self.output_shapes, [6], name="data_shapes")
         #os = [tf.TensorShape(s) for s in self.output_shapes]
 
-        iterator = tf.contrib.data.Iterator.from_string_handle(self.iterator_handle,
+        iterator = tf.data.Iterator.from_string_handle(self.iterator_handle,
                                                                output_types=eval(FLAGS.expected_datatypes))
 
         with tf.name_scope("raw"):
@@ -280,7 +290,7 @@ class Model():
 
     def loss(self, logits, labels,mask,name):
 
-        loss_per_px = tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=logits)
+        loss_per_px = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=logits)
 
         #loss_per_px = tf.boolean_mask(loss_per_px, unknown_mask, name="masked_loss_per_px")
         _ = tf.identity(loss_per_px,name="loss_per_px")

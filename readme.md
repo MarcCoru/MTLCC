@@ -2,27 +2,22 @@
 
 A recurrent neural network approach to encode multi-temporal data for land cover classification.
 
-##### Source code of Rußwurm & Körner (2018) [PDF](https://arxiv.org/abs/1802.02080)
+##### Source code of Rußwurm & Körner (2018) [PDF](http://www.mdpi.com/2220-9964/7/4/129)
 
 If you use this repository consider citing
 ```
 Rußwurm M., Körner M. (2018). Multi-Temporal Land Cover Classification with
-Sequential Recurrent Encoders. Arxiv, 2018.
+Sequential Recurrent Encoders. ISPRS International Journal of Geo-Information, 7(4), 129..
 ```
 
-<!--
-```
-Rußwurm M., Körner M. (2018). Multi-Temporal Land Cover Classification with
-Sequential Recurrent Encoders. ISPRS International Journal of Geo-Information, 2018.
-```
--->
 
-The `Tensorflow 1.4` code of the network is located at `modelzoo/seqencmodel.py`
+The `Tensorflow 1.7` code of the network is located at `modelzoo/seqencmodel.py`
 Further scripts for training and evaluation are provided.
 Additionally, `Jupyter` notebooks used for accuracy evaluation and extraction of internal network activiations are located in this repo.
 The code can be executed after downloading the demo data.
 After installing the dependencies the python scripts should be executable.
 Additionally, we provided a `docker` image with all dependencies already installed.
+The code was developed in `Tensorflow 1.4` and was later ported to `Tensorflow 1.7`.
 
 ## Network
 
@@ -55,6 +50,7 @@ pip install configobj
 pip install matplotlib
 pip install pandas
 pip install configparser
+pip install Pillow # for activations.py
 ```
 
 ## Download demo data
@@ -93,6 +89,7 @@ python modelzoo/seqencmodel.py \
 #### train the network graph
 ```bash
 python train.py tmp/convgru128 \
+    --datadir data_IJGI18/datasets/demo/240
     --temporal_samples 30 \
     --epochs 30 \
     --shuffle True \
@@ -100,7 +97,7 @@ python train.py tmp/convgru128 \
     --train_on 2016 2017
 ```
 
-#### build the 24px network graph for 48px tiles
+#### build network graph for 48px tiles
 ```bash
 python modelzoo/seqencmodel.py \
     --modelfolder tmp/convgru128_48px \
@@ -126,7 +123,7 @@ python copy_network_weights.py tmp/convgru128 tmp/convgru128_48px
 (writes prediction pngs and statistics on accuracy to `tmp/eval/24`)
 ```bash
 python evaluate.py tmp/convgru128 \
-    --datadir data_/datasets/240 \
+    --datadir data_IJGI18/datasets/demo/240 \
     --storedir tmp/eval/24 \
     --writetiles \
     --writeconfidences \
@@ -195,3 +192,16 @@ dockercmd python activations.py \
     --partition eval \
     --tile 16494
 ```
+
+## Customization
+
+If you plan to customize this code with your data:
+check out `SimpleTrain.ipynb`
+
+This notebook provides a simplified walkthrough 
+from the most important components implemented in this repo
+
+it includes
+1. the creation of a custom fake dataset in the right format
+2. the parsing of this dataset
+3. performing one training step on this dataset
