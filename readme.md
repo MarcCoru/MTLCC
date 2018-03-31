@@ -37,19 +37,18 @@ Bidirectional rnn encoder and convolutional softmax classifier, as described in 
 ## Dependencies
 
 Implementations of ConvGRU and ConvLSTM forked from https://github.com/carlthome/tensorflow-convlstm-cell
+
+Get the LSTM/GRU definitions
 ```bash
 git clone https://github.com/MarcCoru/tensorflow-convlstm-cell.git utils/convrnn
 ```
 
 Python packages
 ```bash
-conda install -y gdal
-pip install tensorflow-gpu=1.4
-pip install psycopg2
-pip install configobj
-pip install matplotlib
-pip install pandas
-pip install configparser
+pip install tensorflow-gpu
+pip install configparser # for dataset management
+pip install numpy
+conda install -y gdal # for evaluation.py
 pip install Pillow # for activations.py
 ```
 
@@ -198,7 +197,7 @@ dockercmd python activations.py \
 If you plan to customize this code with your data:
 check out `SimpleTrain.ipynb`
 
-This notebook provides a simplified walkthrough 
+This notebook provides a simplified walkthrough
 from the most important components implemented in this repo
 
 it includes
