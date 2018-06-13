@@ -38,6 +38,8 @@ Bidirectional rnn encoder and convolutional softmax classifier, as described in 
 
 Implementations of ConvGRU and ConvLSTM forked from https://github.com/carlthome/tensorflow-convlstm-cell
 
+The code is implemented in Python 2.7 check your version via `python --version`
+
 Get the LSTM/GRU definitions
 ```bash
 git clone https://github.com/MarcCoru/tensorflow-convlstm-cell.git utils/convrnn
