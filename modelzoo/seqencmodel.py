@@ -41,12 +41,10 @@ tf.app.flags.DEFINE_float("epsilon", 0.9, "Adam epsilon")
 
 ## expected data format ##
 tf.app.flags.DEFINE_string("expected_datatypes",
-                           "(tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.int64)", "expected datatypes")
-tf.app.flags.DEFINE_integer("pix10m", 24, "number of 10m pixels")
-tf.app.flags.DEFINE_integer("num_bands_10m", 4, "number of bands in 10 meter resolution (4)")
-tf.app.flags.DEFINE_integer("num_bands_20m", 6, "number of bands in 20 meter resolution (6)")
-tf.app.flags.DEFINE_integer("num_bands_60m", 3, "number of bands in 20 meter resolution (3)")
-tf.app.flags.DEFINE_integer("num_classes", 17, "number of classes not counting unknown class -> e.g. 0:uk,1:a,2:b,3:c,4:d -> num_classes 4")
+                           "(tf.float32, tf.float32, tf.float32, tf.int64)", "expected datatypes")
+tf.app.flags.DEFINE_integer("pix10m", 64, "number of 10m pixels")
+tf.app.flags.DEFINE_integer("num_bands_10m", 10, "number of bands in 10 meter resolution (4)")
+tf.app.flags.DEFINE_integer("num_classes", 4, "number of classes not counting unknown class -> e.g. 0:uk,1:a,2:b,3:c,4:d -> num_classes 4")
 
 ## performance ##
 tf.app.flags.DEFINE_boolean("swap_memory", True, "Swap memory between GPU and CPU for recurrent layers")
@@ -86,12 +84,13 @@ class Model():
 
         print("building inference...")
         self.logits = self.inference(input=(x, sequence_lengths))
+        print('tf logits: ', tf.shape(self.logits))
 
         # reduce label size to same shape like logits (important for downsampling)
         b,w,h,d = self.logits.get_shape()
 
         # take first label -> assume labels do not change over timeseries
-        first_labelmap = alllabels[:,0]
+        first_labelmap = alllabels # we only have one
 
         # create one-hot labelmap from 0-num_classes
         labels = tf.one_hot(first_labelmap, self.num_classes+1)
@@ -102,6 +101,7 @@ class Model():
 
         # keep rest of labels
         self.labels = labels[:,:,:,1:]
+        print('tf labels: ', tf.shape(self.labels))
 
 
         # mask out all classes labeled unknown (labelid=0)
@@ -165,11 +165,9 @@ class Model():
                                                                output_types=eval(FLAGS.expected_datatypes))
 
         with tf.name_scope("raw"):
-            x10, x20, x60, doy, year, labels = iterator.get_next()
+            x10, doy, year, labels = iterator.get_next()
 
             self.x10 = tf.cast(x10, tf.float32, name="x10")
-            self.x20 = tf.cast(x20, tf.float32, name="x20")
-            self.x60 = tf.cast(x60, tf.float32, name="x60")
             self.doy = tf.cast(doy, tf.float32, name="doy")
             self.year = tf.cast(year, tf.float32,name="year")
             self.y = tf.cast(labels, tf.int32,name="y")
@@ -206,22 +204,18 @@ class Model():
 
             #b,t,w,h,d = self.x10.shape()
 
-            x20 = tf.identity(resize(self.x20, px, px),name="x20")
-            x60 = tf.identity(resize(self.x60, px, px),name="x60")
-
             tf.add_to_collection(ADVANCED_SUMMARY_COLLECTION_NAME,tf.identity(self.x10, name="x10"))
-            tf.add_to_collection(ADVANCED_SUMMARY_COLLECTION_NAME, x20)
-            tf.add_to_collection(ADVANCED_SUMMARY_COLLECTION_NAME, x60)
 
             # expand
             doymat = tf.multiply(expand3x(self.doy), tf.ones((b,t,px,px,1)),name="doy")
             yearmat = self.yearmat = tf.multiply(expand3x(self.year), tf.ones((b, t, px, px, 1)),name="year")
 
-            x = tf.concat((self.x10,x20,x60,doymat,yearmat),axis=-1,name="x")
+            #x = tf.concat((self.x10,x20,x60,doymat,yearmat),axis=-1,name="x")
+            x = tf.concat((self.x10,doymat,yearmat),axis=-1,name="x")
             tf.add_to_collection(ADVANCED_SUMMARY_COLLECTION_NAME, x)
 
             # set depth of x for convolutions
-            depth = FLAGS.num_bands_10m + FLAGS.num_bands_20m + FLAGS.num_bands_60m + 2 # doy and year
+            depth = FLAGS.num_bands_10m + 2 # doy and year
 
             # dynamic shapes. Fill for debugging
 
