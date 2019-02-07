@@ -3,6 +3,7 @@ import os
 from Dataset import Dataset
 import argparse
 import datetime
+import pdb
 
 MODEL_GRAPH_NAME = "graph.meta"
 TRAINING_IDS_IDENTIFIER = "train"
@@ -119,7 +120,7 @@ def train(args, datasets):
             for partition in datasets[dataset].keys():
                 handle = datasets[dataset][partition]["handle"]
                 writer = datasets[dataset][partition]["writer"]
-
+                print('handle: ', handle.shape, handle)
                 ops = [tf.summary.merge_all(), cross_entropy_op, overall_accuracy_op]
                 sum, xe, oa = sess.run(ops, feed_dict={iterator_handle_op: handle, is_train_op: True})
                 writer.add_summary(sum, samples)

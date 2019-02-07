@@ -59,7 +59,7 @@ class S2parser():
         sys.stdout.flush()
 
     def get_shapes(self, sample):
-        print "reading shape of data using the sample "+sample
+        print("reading shape of data using the sample "+sample)
         data = self.read_and_return(sample)
         return [tensor.shape for tensor in data]
 
@@ -92,12 +92,12 @@ class S2parser():
         elif isinstance(filenames,tf.FIFOQueue):
             filename_queue = filenames
         else:
-            print "please insert either list or tf.FIFOQueue"
+            print("please insert either list or tf.FIFOQueue")
 
         reader = tf.TFRecordReader()
         f, serialized_example = reader.read(filename_queue)
 
-        print f
+        print(f)
 
         feature = tf.parse_single_example(serialized_example, features=self.feature_format)
 
@@ -153,10 +153,10 @@ class S2parser():
             return sess.run(feature_op)
 
 def test():
-    print "Running self test:"
-    print "temporary tfrecord file is written with random numbers"
-    print "tfrecord file is read back"
-    print "contents are compared"
+    print("Running self test:")
+    print("temporary tfrecord file is written with random numbers")
+    print("tfrecord file is read back")
+    print("contents are compared")
 
     filename="tmptile.tfrecord"
 
@@ -176,11 +176,11 @@ def test():
     x10_, x20_, x60_, doy_, year_, labels_ = read_and_return(filename)
 
     # test if wrote and read data is the same
-    print "TEST"
+    print("TEST")
     if np.all(x10_==x10) and np.all(x20_==x20) and np.all(x60_==x60) and np.all(labels_==labels) and np.all(doy_==doy) and np.all(year_==year):
-        print "PASSED"
+        print("PASSED")
     else:
-        print "NOT PASSED"
+        print("NOT PASSED")
 
 
     # remove file
