@@ -22,7 +22,8 @@ tf.app.flags.DEFINE_string("kernel", "(1,3,3)", "kernel of convolutions")
 tf.app.flags.DEFINE_string("classkernel", "(3,3)", "kernelsize of final classification convolution")
 tf.app.flags.DEFINE_string("cnn_activation", "leaky_relu", "activation function for convolutional layers ('relu' or 'leaky_relu' [default])")
 
-tf.app.flags.DEFINE_boolean("bidirectional", True, "Bidirectional Convolutional RNN")
+#tf.app.flags.DEFINE_boolean("bidirectional", True, "Bidirectional Convolutional RNN")
+tf.app.flags.DEFINE_boolean("bidirectional", False, "Bidirectional Convolutional RNN")
 tf.app.flags.DEFINE_integer("convrnn_compression_filters", -1, "number of convrnn compression filters or (default) -1 for no compression")
 tf.app.flags.DEFINE_string("convcell", "gru", "Convolutional RNN cell architecture ('gru' (default) or 'lstm')")
 tf.app.flags.DEFINE_string("convrnn_kernel", "(3,3)", "kernelsize of recurrent convolution. default (3,3)")
@@ -42,7 +43,7 @@ tf.app.flags.DEFINE_float("epsilon", 0.9, "Adam epsilon")
 ## expected data format ##
 tf.app.flags.DEFINE_string("expected_datatypes",
                            "(tf.float32, tf.float32, tf.float32, tf.int64)", "expected datatypes")
-tf.app.flags.DEFINE_integer("pix10m", 64, "number of 10m pixels")
+tf.app.flags.DEFINE_integer("pix10m", 24, "number of 10m pixels")
 tf.app.flags.DEFINE_integer("num_bands_10m", 10, "number of bands in 10 meter resolution (4)")
 tf.app.flags.DEFINE_integer("num_classes", 4, "number of classes not counting unknown class -> e.g. 0:uk,1:a,2:b,3:c,4:d -> num_classes 4")
 
@@ -90,7 +91,7 @@ class Model():
         b,w,h,d = self.logits.get_shape()
 
         # take first label -> assume labels do not change over timeseries
-        first_labelmap = alllabels # we only have one
+        first_labelmap = alllabels[:,0]
 
         # create one-hot labelmap from 0-num_classes
         labels = tf.one_hot(first_labelmap, self.num_classes+1)
@@ -183,6 +184,7 @@ class Model():
             h = tf.shape(tensor)[2]
             w = tf.shape(tensor)[3]
             d = tf.shape(tensor)[4]
+            print('b: {}, t: {}, h: {}, w: {}, d: {}'.format(b, t, h, w, d))
 
             # stack batch on times to fit 4D requirement of resize_tensor
             stacked_tensor = tf.reshape(tensor, [b * t, h, w, d])
@@ -197,7 +199,7 @@ class Model():
             return vector
 
         with tf.name_scope("reshaped"):
-
+            print(self.x10.shape)
             b = tf.shape(self.x10)[0]
             t = tf.shape(self.x10)[1]
             px = tf.shape(self.x10)[2]
@@ -209,6 +211,9 @@ class Model():
             # expand
             doymat = tf.multiply(expand3x(self.doy), tf.ones((b,t,px,px,1)),name="doy")
             yearmat = self.yearmat = tf.multiply(expand3x(self.year), tf.ones((b, t, px, px, 1)),name="year")
+
+            print(tf.shape(doymat))
+            print(tf.shape(yearmat))
 
             #x = tf.concat((self.x10,x20,x60,doymat,yearmat),axis=-1,name="x")
             x = tf.concat((self.x10,doymat,yearmat),axis=-1,name="x")

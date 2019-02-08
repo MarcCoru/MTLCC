@@ -1,4 +1,4 @@
-from S2parser import S2parser
+from S2parser_africa import S2parser
 import tensorflow as tf
 import os
 import configparser
@@ -82,8 +82,6 @@ class Dataset():
         assert 'pix10' in cfg.keys()
         assert 'nobs' in cfg.keys()
         assert 'nbands10' in cfg.keys()
-        assert 'nbands20' in cfg.keys()
-        assert 'nbands60' in cfg.keys()
 
         self.tiletable=cfg["tiletable"]
 
@@ -91,26 +89,20 @@ class Dataset():
 
         self.expected_shapes = self.calc_expected_shapes(int(cfg["pix10"]),
                                                          int(cfg["nobs"]),
-                                                         int(cfg["nbands10"]),
-                                                         int(cfg["nbands20"]),
-                                                         int(cfg["nbands60"])
+                                                         int(cfg["nbands10"])
                                                          )
 
 
         # expected datatypes as read from disk
-        self.expected_datatypes = (tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.int64)
+        self.expected_datatypes = (tf.float32, tf.float32, tf.float32, tf.int64)
 
-    def calc_expected_shapes(self, pix10, nobs, bands10, bands20, bands60):
-        pix20 = pix10 / 2;
-        pix60 = pix10 / 6;
+    def calc_expected_shapes(self, pix10, nobs, bands10):
         x10shape = (nobs, pix10, pix10, bands10)
-        x20shape = (nobs, pix20, pix20, bands20)
-        x60shape = (nobs, pix60, pix60, bands60)
         doyshape = (nobs,)
         yearshape = (nobs,)
         labelshape = (nobs, pix10, pix10)
 
-        return [x10shape, x20shape, x60shape, doyshape, yearshape, labelshape]
+        return [x10shape, doyshape, yearshape, labelshape]
 
     def transform_labels(self,feature):
         """
@@ -118,32 +110,30 @@ class Dataset():
         2. perform label lookup as stored label ids might be not sequential labelid:[0,3,4] -> dimid:[0,1,2]
         """
 
-        x10, x20, x60, doy, year, labels = feature
+        x10, doy, year, labels = feature
 
         # take first label time [46,24,24] -> [24,24]
         # labels are not supposed to change over the time series
         #labels = labels[0]
         labels = self.id_lookup_table.lookup(labels)
 
-        return x10, x20, x60, doy, year, labels
+        return x10, doy, year, labels
 
     def normalize(self, feature):
 
-        x10, x20, x60, doy, year, labels = feature
+        x10, doy, year, labels = feature
         x10 = tf.scalar_mul(1e-4, tf.cast(x10, tf.float32))
-        x20 = tf.scalar_mul(1e-4, tf.cast(x20, tf.float32))
-        x60 = tf.scalar_mul(1e-4, tf.cast(x60, tf.float32))
 
         doy = tf.cast(doy, tf.float32) / 365
 
         # year = (2016 - tf.cast(year, tf.float32)) / 2017
         year = tf.cast(year, tf.float32) - 2016
 
-        return x10, x20, x60, doy, year, labels
+        return x10, doy, year, labels
 
     def augment(self, feature):
 
-        x10, x20, x60, doy, year, labels = feature
+        x10, doy, year, labels = feature
 
         ## Flip UD
 
@@ -152,8 +142,6 @@ class Dataset():
 
         # flip
         x10 = tf.cond(condition, lambda: tf.reverse(x10, axis=[1]), lambda: x10)
-        x20 = tf.cond(condition, lambda: tf.reverse(x20, axis=[1]), lambda: x20)
-        x60 = tf.cond(condition, lambda: tf.reverse(x60, axis=[1]), lambda: x60)
         labels = tf.cond(condition, lambda: tf.reverse(labels, axis=[1]), lambda: labels)
 
 
@@ -164,11 +152,9 @@ class Dataset():
 
         # flip
         x10 = tf.cond(condition, lambda: tf.reverse(x10, axis=[2]), lambda: x10)
-        x20 = tf.cond(condition, lambda: tf.reverse(x20, axis=[2]), lambda: x20)
-        x60 = tf.cond(condition, lambda: tf.reverse(x60, axis=[2]), lambda: x60)
         labels = tf.cond(condition, lambda: tf.reverse(labels, axis=[2]), lambda: labels)
 
-        return x10, x20, x60, doy, year, labels
+        return x10, doy, year, labels
 
 
     def temporal_sample(self, feature):
@@ -180,7 +166,7 @@ class Dataset():
         if n is None:
             return feature
 
-        x10, x20, x60, doy, year, labels = feature
+        x10, doy, year, labels = feature
 
         # data format 1, 2, 1, 2, -1,-1,-1
         # sequence lengths indexes are negative values.
@@ -196,19 +182,17 @@ class Dataset():
         idxs = -tf.nn.top_k(-shuffled_range, k=n).values
 
         x10 = tf.gather(x10, idxs)
-        x20 = tf.gather(x20, idxs)
-        x60 = tf.gather(x60, idxs)
         doy = tf.gather(doy, idxs)
         year = tf.gather(year, idxs)
 
-        return x10, x20, x60, doy, year, labels
+        return x10, doy, year, labels
 
     def get_ids(self, partition, fold=0):
 
         def readids(path):
             with open(path, 'r') as f:
                 lines = f.readlines()
-            return [int(l.replace("\n", "")) for l in lines]
+            return [l.replace("\n", "") for l in lines]
 
         traintest = "{partition}_fold{fold}.tileids"
         eval = "{partition}.tileids"
@@ -233,10 +217,11 @@ class Dataset():
 
         # set of ids as present in database of given partition (train/test/eval) and fold (0-9)
         allids = self.get_ids(partition=partition, fold=fold)
-
+       
         # set of ids present in local folder (e.g. 1.tfrecord)
         tiles = os.listdir(self.datadir)
-
+        #print('tiles: ', tiles)
+        #print('dataadir: ', self.datadir)
         if tiles[0].endswith(".gz"):
             compression = "GZIP"
             ext = ".tfrecord.gz"
@@ -244,7 +229,8 @@ class Dataset():
             compression = ""
             ext = ".tfrecord"
 
-        downloaded_ids = [int(t.replace(".gz", "").replace(".tfrecord", "")) for t in tiles]
+        downloaded_ids = [t.replace(".gz", "").replace(".tfrecord", "") for t in tiles]
+        #downloaded_ids = [int(t.replace(".gz", "").replace(".tfrecord", "")) for t in tiles]
 
         # intersection of available ids and partition ods
         if overwrite_ids is None:
@@ -252,7 +238,6 @@ class Dataset():
         else:
             print "overwriting data ids! due to manual input"
             ids = overwrite_ids
-
 
         filenames = [os.path.join(self.datadir, str(id) + ext) for id in ids]
 
@@ -320,9 +305,7 @@ def main():
 
     with tf.Session() as sess:
         sess.run([iterator.initializer, tf.tables_initializer()])
-        x10, x20, x60, doy, year, labels = sess.run(iterator.get_next())
-        print x10.shape
-
+        x10, doy, year, labels = sess.run(iterator.get_next())
 
 if __name__ == "__main__":
     main()
