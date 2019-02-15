@@ -90,11 +90,11 @@ python modelzoo/seqencmodel.py \
 #### train the network graph
 ```bash
 python train.py tmp/convgru128 \
-    --datadir data_IJGI18/datasets/demo/240
+    --datadir data_IJGI18/datasets/demo/240 \
     --temporal_samples 30 \
     --epochs 30 \
     --shuffle True \
-    --batchsize 4
+    --batchsize 4 \
     --train_on 2016 2017
 ```
 
