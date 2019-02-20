@@ -288,8 +288,7 @@ class Model():
 
     def loss(self, logits, labels,mask,name):
 
-        #loss_per_px = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=logits)
-        loss_per_px = tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=logits)
+        loss_per_px = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=logits)
 
         #loss_per_px = tf.boolean_mask(loss_per_px, unknown_mask, name="masked_loss_per_px")
         _ = tf.identity(loss_per_px,name="loss_per_px")

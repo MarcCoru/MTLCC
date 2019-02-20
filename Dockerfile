@@ -1,4 +1,5 @@
-FROM tensorflow/tensorflow:1.4.0-gpu
+FROM tensorflow/tensorflow:1.12.0-gpu
+#FROM tensorflow/tensorflow:1.4.0-gpu
 
 LABEL maintainer="Marc Rußwurm <marc.russwurm@tum.de>"
 

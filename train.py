@@ -25,7 +25,7 @@ graph_created_flag = False
 def main(args):
     tf.reset_default_graph()
 
-    if args.verbose: print "setting visible GPU {}".format(args.gpu)
+    if args.verbose: print("setting visible GPU {}".format(args.gpu))
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"  # see issue #152
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
@@ -94,7 +94,7 @@ def train(args, datasets):
 
     graph = os.path.join(args.modeldir, MODEL_GRAPH_NAME)
     if not graph_created_flag:
-        if args.verbose: print "importing graph from {}".format(graph)
+        if args.verbose: print("importing graph from {}".format(graph))
         dir(tf.contrib)  # see https://github.com/tensorflow/tensorflow/issues/10130
         _ = tf.train.import_meta_graph(graph)
 
@@ -143,7 +143,7 @@ def train(args, datasets):
 
     def save(saver, step, sess, checkpoint):
         saver.save(sess, checkpoint, global_step=step)
-        print "saving checkpoint step {}".format(step)
+        print("saving checkpoint step {}".format(step))
 
     saver = tf.train.Saver(max_to_keep=args.max_models_to_keep, keep_checkpoint_every_n_hours=args.save_every_n_hours,
                            save_relative_paths=True)
@@ -170,12 +170,12 @@ def train(args, datasets):
                 writer = tf.summary.FileWriter(os.path.join(args.modeldir, summaryname), sess.graph)
                 datasets[dataset][partition]["writer"] = writer
 
-                print "initializing dataset {}, partition {}".format(dataset,partition)
+                print("initializing dataset {}, partition {}".format(dataset,partition))
                 sess.run([iterator.initializer])
 
         latest_ckpt = tf.train.latest_checkpoint(args.modeldir)
         if latest_ckpt is not None:
-            print "restoring from " + latest_ckpt
+            print("restoring from " + latest_ckpt)
             saver.restore(sess, latest_ckpt)
 
         step, samples = sess.run([global_step_op, samples_seen_op])
@@ -185,7 +185,7 @@ def train(args, datasets):
 
             for dataset in args.train_on:
                 # normal training operation
-                print "{} {} training step {}...".format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),dataset, step)
+                print("{} {} training step {}...".format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),dataset, step))
 
                 feed_dict = {iterator_handle_op: datasets[dataset]["train"]["handle"], is_train_op: True}
                 print('checkpoint0')
