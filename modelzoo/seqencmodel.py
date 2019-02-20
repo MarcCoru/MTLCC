@@ -22,8 +22,7 @@ tf.app.flags.DEFINE_string("kernel", "(1,3,3)", "kernel of convolutions")
 tf.app.flags.DEFINE_string("classkernel", "(3,3)", "kernelsize of final classification convolution")
 tf.app.flags.DEFINE_string("cnn_activation", "leaky_relu", "activation function for convolutional layers ('relu' or 'leaky_relu' [default])")
 
-#tf.app.flags.DEFINE_boolean("bidirectional", True, "Bidirectional Convolutional RNN")
-tf.app.flags.DEFINE_boolean("bidirectional", False, "Bidirectional Convolutional RNN")
+tf.app.flags.DEFINE_boolean("bidirectional", True, "Bidirectional Convolutional RNN")
 tf.app.flags.DEFINE_integer("convrnn_compression_filters", -1, "number of convrnn compression filters or (default) -1 for no compression")
 tf.app.flags.DEFINE_string("convcell", "gru", "Convolutional RNN cell architecture ('gru' (default) or 'lstm')")
 tf.app.flags.DEFINE_string("convrnn_kernel", "(3,3)", "kernelsize of recurrent convolution. default (3,3)")
@@ -289,7 +288,8 @@ class Model():
 
     def loss(self, logits, labels,mask,name):
 
-        loss_per_px = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=logits)
+        #loss_per_px = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=logits)
+        loss_per_px = tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=logits)
 
         #loss_per_px = tf.boolean_mask(loss_per_px, unknown_mask, name="masked_loss_per_px")
         _ = tf.identity(loss_per_px,name="loss_per_px")
