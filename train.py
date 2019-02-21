@@ -5,7 +5,7 @@ import argparse
 import datetime
 import pdb
 
-from tensorflow.compat.v1 import ConfigProto
+from tensorflow import ConfigProto
 
 MODEL_GRAPH_NAME = "graph.meta"
 TRAINING_IDS_IDENTIFIER = "train"
