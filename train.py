@@ -5,6 +5,8 @@ import argparse
 import datetime
 import pdb
 
+from tensorflow.compat.v1 import ConfigProto
+
 MODEL_GRAPH_NAME = "graph.meta"
 TRAINING_IDS_IDENTIFIER = "train"
 TESTING_IDS_IDENTIFIER = "test"
@@ -150,8 +152,8 @@ def train(args, datasets):
 
     checkpoint = os.path.join(args.modeldir, MODEL_CHECKPOINT_NAME)
 
-    #config = tf.ConfigProto()
-    config = tf.ConfigProto(use_per_session_threads=True)
+    config = ConfigProto()
+    #config = tf.ConfigProto(use_per_session_threads=True)
     config.gpu_options.allow_growth = args.allow_growth
     with tf.Session(config=config) as sess:
         sess.run([tf.global_variables_initializer(), tf.local_variables_initializer(), tf.tables_initializer()])
@@ -251,7 +253,7 @@ if __name__ == "__main__":
                         help="overwrite learning rate. Required placeholder named 'learning_rate' in model")
     parser.add_argument('--save_every_n_hours', type=int, default=1, help="save checkpoint every n hours")
     parser.add_argument('--queue_capacity', type=int, default=256, help="Capacity of queue")
-    parser.add_argument('--allow_growth', type=bool, default=False, help="Allow dynamic VRAM growth of TF")
+    parser.add_argument('--allow_growth', type=bool, default=True, help="Allow dynamic VRAM growth of TF")
     parser.add_argument('--limit_batches', type=int, default=-1,
                         help="artificially reduce number of batches to encourage overfitting (for debugging)")
 
