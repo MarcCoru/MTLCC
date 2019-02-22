@@ -100,7 +100,6 @@ def train(args, datasets):
         _ = tf.train.import_meta_graph(graph)
 
     def get_operation(name):
-        print('get operation: ', name, tf.get_default_graph().get_operation_by_name(name).outputs[0])
         return tf.get_default_graph().get_operation_by_name(name).outputs[0]
 
     iterator_handle_op = get_operation("data_iterator_handle")
