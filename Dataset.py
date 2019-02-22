@@ -124,14 +124,20 @@ class Dataset():
         return x10, doy, year, labels
 
     def normalize(self, feature):
-
+        """
+        Normalizes between 0 and 1.
+        """ 
         x10, doy, year, labels = feature
-        x10 = tf.scalar_mul(1e-4, tf.cast(x10, tf.float32))
-
+        
         doy = tf.cast(doy, tf.float32) / 365
-
         # year = (2016 - tf.cast(year, tf.float32)) / 2017
         year = tf.cast(year, tf.float32) - 2016
+        
+        if self.country == 'ghana':
+
+        x10 = tf.scalar_mul(1e-4, tf.cast(x10, tf.float32))
+
+
 
         return x10, doy, year, labels
 
