@@ -8,7 +8,7 @@ import csv
 class Dataset():
     """ A wrapper class around Tensorflow Dataset api handling data normalization and augmentation """
 
-    def __init__(self, datadir, verbose=False, temporal_samples=None, section="dataset", augment=False):
+    def __init__(self, datadir, verbose=False, temporal_samples=None, section="dataset", augment=False, country=None):
         self.verbose = verbose
 
         self.augment = augment
@@ -76,7 +76,11 @@ class Dataset():
         datacfg.read(cfgpath)
         cfg = datacfg[section]
 
-        self.tileidfolder = os.path.join(dataroot, "tileids")
+        self.country = country
+        if self.country is None:
+            self.tileidfolder = os.path.join(dataroot, "tileids")
+        else:
+            self.tileidfolder = os.path.join(dataroot, "tileids/" + self.country + "/tileids")
         self.datadir = os.path.join(dataroot, cfg["datadir"])
 
         assert 'pix10' in cfg.keys()
@@ -220,8 +224,6 @@ class Dataset():
        
         # set of ids present in local folder (e.g. 1.tfrecord)
         tiles = os.listdir(self.datadir)
-        #print('tiles: ', tiles)
-        #print('dataadir: ', self.datadir)
         if tiles[0].endswith(".gz"):
             compression = "GZIP"
             ext = ".tfrecord.gz"
@@ -230,7 +232,6 @@ class Dataset():
             ext = ".tfrecord"
 
         downloaded_ids = [t.replace(".gz", "").replace(".tfrecord", "") for t in tiles]
-        #downloaded_ids = [int(t.replace(".gz", "").replace(".tfrecord", "")) for t in tiles]
 
         # intersection of available ids and partition ods
         if overwrite_ids is None:

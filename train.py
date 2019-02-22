@@ -57,7 +57,7 @@ def setupDatasets(args):
     datasets_dict=dict()
     for section in ['2017']:
         datasets_dict[section]=dict()
-        dataset = Dataset(datadir=args.datadir, verbose=True, temporal_samples=args.temporal_samples, section=section)
+        dataset = Dataset(datadir=args.datadir, verbose=True, temporal_samples=args.temporal_samples, section=section, country=args.country)
         for partition in [TRAINING_IDS_IDENTIFIER, TESTING_IDS_IDENTIFIER]:
             datasets_dict[section][partition] = dict()
             tfdataset, _, _, filenames = dataset.create_tf_dataset(partition,
@@ -71,7 +71,6 @@ def setupDatasets(args):
             datasets_dict[section][partition]["iterator"]=iterator
             datasets_dict[section][partition]["filenames"]=filenames
             #dataset_list.append({'sec':section,'id':identifier,'iterator':iterator,'filenames':filenames})
-    print('datasets_dict: ', datasets_dict)
     return datasets_dict
 
 
@@ -190,29 +189,21 @@ def train(args, datasets):
                 print("{} {} training step {}...".format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),dataset, step))
 
                 feed_dict = {iterator_handle_op: datasets[dataset]["train"]["handle"], is_train_op: True}
-                print('checkpoint0')
                 if args.learning_rate is not None:
                      feed_dict[learning_rate_op] = args.learning_rate
 
-                print('checkpoint1')
                 sess.run(train_op, feed_dict=feed_dict)
-
-                print('checkpoint2')
 
                 # write summary
                 if step % args.summary_frequency == 0:
                     current_epoch = write_summaries(sess, datasets)
-                    print('checkpoint3')
 
-                print('checkpoint4')
                 # write checkpoint
                 if step % args.save_frequency == 0:
                     save(saver, step, sess, checkpoint)
-                    print('checkpoint5')
                     # print "saving to " + checkpoint
                     # saver.save(sess, checkpoint, global_step=step)
 
-                print('checkpoint6')
                 step += 1  # keep local step counter
 
 
@@ -256,6 +247,7 @@ if __name__ == "__main__":
     parser.add_argument('--allow_growth', type=bool, default=True, help="Allow dynamic VRAM growth of TF")
     parser.add_argument('--limit_batches', type=int, default=-1,
                         help="artificially reduce number of batches to encourage overfitting (for debugging)")
+    parser.add_argument('--country', type=str, default=None, help="Country to use for data input")
 
     args = parser.parse_args()
 
