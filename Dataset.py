@@ -133,11 +133,21 @@ class Dataset():
         # year = (2016 - tf.cast(year, tf.float32)) / 2017
         year = tf.cast(year, tf.float32) - 2016
         
-        if self.country == 'ghana':
+        if self.country in ['ghana', 'southsudan']:
+            S2_BAND_MEANS = { 'ghana': np.array([2620.00, 2519.89, 2630.31, 2739.81, 3225.22, 3562.64, 3356.57, 3788.05, 2915.40, 2102.65]),
+                              'southsudan': np.array([2119.15, 2061.95, 2127.71, 2277.60, 2784.21, 3088.40, 2939.33, 3308.03, 2597.14, 1834.81]) }
 
-        x10 = tf.scalar_mul(1e-4, tf.cast(x10, tf.float32))
+            S2_BAND_STDS = { 'ghana': np.array([2171.62, 2085.69, 2174.37, 2084.56, 2058.97, 2117.31, 1988.70, 2099.78, 1209.48, 918.19]),
+                             'southsudan': np.array([2113.41, 2026.64, 2126.10, 2093.35, 2066.81, 2114.85, 2049.70, 2111.51, 1320.97, 1029.58]) }
 
+            band_means = S2_BAND_MEANS[country]
+            band_stds = S2_BAND_STDS[country]
 
+            x10 = tf.cast(x10, tf.float32)
+            x10 = tf.divide( tf.subtract( x10, tf.reshape(band_means, shape=[-1, 1, 1, 1]) ), tf.reshape(band_stds, shape=[-1, 1, 1, 1]) )
+
+        else:
+            x10 = tf.scalar_mul(1e-4, tf.cast(x10, tf.float32))
 
         return x10, doy, year, labels
 
