@@ -53,6 +53,7 @@ class Dataset():
                 id,cl = row.split('|')
                 self.ids.append(int(id))
                 self.classes.append(cl)
+        print('classes: ', self.classes)
 
         ## create a lookup table to map labelids to dimension ids
 
@@ -106,6 +107,11 @@ class Dataset():
         yearshape = (nobs,)
         labelshape = (nobs, pix10, pix10)
 
+        print('x10shape: ', x10shape)
+        print('doyshape: ', doyshape)
+        print('yearshape: ', yearshape)
+        print('labelshape: ', labelshape)
+
         return [x10shape, doyshape, yearshape, labelshape]
 
     def transform_labels(self,feature):
@@ -119,6 +125,7 @@ class Dataset():
         # take first label time [46,24,24] -> [24,24]
         # labels are not supposed to change over the time series
         #labels = labels[0]
+        #print('unique_labels: ', tf.unique(tf.stack(tf.reshape(labels, -1))))
         labels = self.id_lookup_table.lookup(labels)
 
         return x10, doy, year, labels
@@ -133,12 +140,14 @@ class Dataset():
         # year = (2016 - tf.cast(year, tf.float32)) / 2017
         year = tf.cast(year, tf.float32) - 2016
         
-        if self.country in ['ghana', 'southsudan']:
+        if self.country in ['ghana', 'southsudan', 'germany']:
             S2_BAND_MEANS = { 'ghana': tf.constant([2620.00, 2519.89, 2630.31, 2739.81, 3225.22, 3562.64, 3356.57, 3788.05, 2915.40, 2102.65]),
-                              'southsudan': tf.constant([2119.15, 2061.95, 2127.71, 2277.60, 2784.21, 3088.40, 2939.33, 3308.03, 2597.14, 1834.81]) }
+                              'southsudan': tf.constant([2119.15, 2061.95, 2127.71, 2277.60, 2784.21, 3088.40, 2939.33, 3308.03, 2597.14, 1834.81]),
+                              'germany': tf.constant([1991.37, 2026.92, 2136.22, 6844.82, 9951.98, 11638.58, 3664.66, 12375.27, 7351.99, 5027.96, 0., 0., 0.])}
 
             S2_BAND_STDS = { 'ghana': tf.constant([2171.62, 2085.69, 2174.37, 2084.56, 2058.97, 2117.31, 1988.70, 2099.78, 1209.48, 918.19]),
-                             'southsudan': tf.constant([2113.41, 2026.64, 2126.10, 2093.35, 2066.81, 2114.85, 2049.70, 2111.51, 1320.97, 1029.58]) }
+                             'southsudan': tf.constant([2113.41, 2026.64, 2126.10, 2093.35, 2066.81, 2114.85, 2049.70, 2111.51, 1320.97, 1029.58]),
+                             'germany': tf.constant([1943.62, 1755.82, 1841.09, 5703.38, 5104.90, 5136.54, 1663.27, 5125.05, 3682.57, 3273.71, 10000., 10000., 10000.])}
 
             band_means = S2_BAND_MEANS[self.country]
             band_stds = S2_BAND_STDS[self.country]
@@ -200,7 +209,7 @@ class Dataset():
         shuffled_range = tf.random_shuffle(tf.range(max_obs))[0:n]
 
         idxs = -tf.nn.top_k(-shuffled_range, k=n).values
-
+        print('idxs: ', idxs)
         x10 = tf.gather(x10, idxs)
         doy = tf.gather(doy, idxs)
         year = tf.gather(year, idxs)

@@ -55,7 +55,7 @@ def setupDatasets(args):
 
 
     datasets_dict=dict()
-    for section in ['2017']:
+    for section in ['2016']:
         datasets_dict[section]=dict()
         dataset = Dataset(datadir=args.datadir, verbose=True, temporal_samples=args.temporal_samples, section=section, country=args.country)
         for partition in [TRAINING_IDS_IDENTIFIER, TESTING_IDS_IDENTIFIER]:

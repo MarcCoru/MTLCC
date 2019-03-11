@@ -5,10 +5,15 @@ data splits (input to our model)
 import os
 import pickle
 
-country = 'ghana'
+country = 'germany'
 setsize = 'full'
 splits = ['train', 'val', 'test']
-tile_dir = '/home/roserustowicz/MTLCC-all/africa/tileids/ghana'
+tile_dir = '/home/roserustowicz/MTLCC-all/germany/tileids/' + country
+
+if country in ['ghana', 'southsudan', 'tanzania']:
+    numgrids = 9
+elif country in ['germany']:
+    numgrids = 4
 
 for split in splits:
     cur_file = '_'.join([country, setsize, split])
@@ -19,7 +24,9 @@ for split in splits:
         outfname = os.path.join(tile_dir, cur_file + '.tileids')
         with open(outfname, 'w') as outf:
             for item in inlist:
-                for append_i in range(9):
+                item = item.zfill(6)
+                #print('item: ', item)
+                for append_i in range(numgrids):
                     cur_item = item + str(append_i)
                     outf.write("%s\n" % cur_item)
 
