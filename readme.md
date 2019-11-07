@@ -45,21 +45,41 @@ Get the LSTM/GRU definitions
 git clone https://github.com/MarcCoru/tensorflow-convlstm-cell.git utils/convrnn
 ```
 
+Create conda environment with python 2.7
+```
+conda create -n mtlcc python=2.7 pip
+conda activate mtlcc
+```
+
 Python packages
 ```bash
-pip install tensorflow-gpu
+pip install tensorflow-gpu==1.7
 pip install configparser # for dataset management
 pip install numpy
 conda install -y gdal # for evaluation.py
 pip install Pillow # for activations.py
+pip install rasterio # for tfrecord2tif.py
 ```
 
 ## Download demo data
 
-download demo data (requirement to run the following commands)
+download demo data (~1GB) (requirement to run the following commands)
 
 ```bash
-bash download.sh
+bash download.sh demo
+```
+
+for the full dataset (40GB) execute
+```bash
+bash download.sh full
+```
+
+## Convert tfrecord to tif
+
+Convert tfrecord time series folders containing geotiffs by
+```bash
+python tfrecord2tif.py data_IJGI18/datasets/full/480/data16/5887.tfrecord.gz \
+     --geotransforms data_IJGI18/datasets/full/480/geotransforms.csv
 ```
 
 ## Jupyter notebooks
