@@ -78,7 +78,7 @@ download the raw shapefiles along with prediction and confidence images for both
 ```bash
 wget https://syncandshare.lrz.de/dl/fiSLeYcXJzyMUFJJ4HcrqBiB/showcase.zip
 unzip showcase.zip
-qgis showcase/demo.qgis
+qgis showcase/demo.qgs
 ```
 
 ## Convert tfrecord to tif
