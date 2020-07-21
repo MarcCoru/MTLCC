@@ -74,6 +74,13 @@ for the full dataset (40GB) execute
 bash download.sh full
 ```
 
+download the raw shapefiles along with prediction and confidence images for both years (1.5 GB)
+```bash
+wget https://syncandshare.lrz.de/dl/fiSLeYcXJzyMUFJJ4HcrqBiB/showcase.zip
+unzip showcase.zip
+qgis showcase/demo.qgis
+```
+
 ## Convert tfrecord to tif
 
 Convert tfrecord time series folders containing geotiffs by
