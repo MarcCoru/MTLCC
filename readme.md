@@ -63,6 +63,8 @@ pip install rasterio # for tfrecord2tif.py
 
 ## Download demo data
 
+> :warning: We added a password to the data due to frequent automated downloads. Please ping marc.russwurm{at}tum.de per email to get the password.
+
 download demo data (~1GB) (requirement to run the following commands)
 
 ```bash
@@ -74,12 +76,7 @@ for the full dataset (40GB) execute
 bash download.sh full
 ```
 
-download the raw shapefiles along with prediction and confidence images for both years (1.5 GB)
-```bash
-wget https://syncandshare.lrz.de/dl/fiSLeYcXJzyMUFJJ4HcrqBiB/showcase.zip
-unzip showcase.zip
-qgis showcase/demo.qgs
-```
+download the raw shapefiles along with prediction and confidence images for both years (1.5 GB) from this link https://syncandshare.lrz.de/dl/fiSLeYcXJzyMUFJJ4HcrqBiB/showcase.zip. Please ping me for the password.
 
 ## Convert tfrecord to tif
 
