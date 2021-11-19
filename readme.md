@@ -63,20 +63,17 @@ pip install rasterio # for tfrecord2tif.py
 
 ## Download demo data
 
-> :warning: We added a password to the data due to frequent automated downloads. Please ping marc.russwurm{at}tum.de per email to get the password.
-
-download demo data (~1GB) (requirement to run the following commands)
-
+Download the full dataset (40GB) via
 ```bash
-bash download.sh demo
+wget https://zenodo.org/record/5712933/files/data_IJGI18.zip
 ```
 
-for the full dataset (40GB) execute
-```bash
-bash download.sh full
+download the raw shapefiles along with prediction and confidence images for both years (1.5 GB) 
+```
+wget https://zenodo.org/record/5712933/files/showcase.zip
 ```
 
-download the raw shapefiles along with prediction and confidence images for both years (1.5 GB) from this link https://syncandshare.lrz.de/dl/fiSLeYcXJzyMUFJJ4HcrqBiB/showcase.zip. Please ping me for the password.
+or check the [Zenodo](https://zenodo.org/record/5712933#.YZdpwXVKhaY) page
 
 ## Convert tfrecord to tif
 

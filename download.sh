@@ -1,10 +1,7 @@
 #!/bin/bash
 
-echo We added a password to the data due to frequent automated downloads. Please ping marc.russwurm at tum.de per email to get the password.
-
 if [ "$1" == "full" ]; then
-    echo please download via browser https://syncandshare.lrz.de/dl/fi7btjPeTr2Ecj8HVgBGvcmf/data_IJGI18.zip
-    #wget https://syncandshare.lrz.de/dl/fi7btjPeTr2Ecj8HVgBGvcmf/data_IJGI18.zip
+    wget https://syncandshare.lrz.de/dl/fi7btjPeTr2Ecj8HVgBGvcmf/data_IJGI18.zip
     #unzip data_IJGI18.zip
     #rm data_IJGI18.zip
 elif [ "$1" == "demo" ]; then
