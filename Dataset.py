@@ -1,4 +1,4 @@
-from S2parser import S2parser
+from S2parser_africa import S2parser
 import tensorflow as tf
 import os
 import configparser
@@ -8,7 +8,7 @@ import csv
 class Dataset():
     """ A wrapper class around Tensorflow Dataset api handling data normalization and augmentation """
 
-    def __init__(self, datadir, verbose=False, temporal_samples=None, section="dataset", augment=False):
+    def __init__(self, datadir, verbose=False, temporal_samples=None, section="dataset", augment=False, country=None):
         self.verbose = verbose
 
         self.augment = augment
@@ -53,6 +53,7 @@ class Dataset():
                 id,cl = row.split('|')
                 self.ids.append(int(id))
                 self.classes.append(cl)
+        print('classes: ', self.classes)
 
         ## create a lookup table to map labelids to dimension ids
 
@@ -76,14 +77,16 @@ class Dataset():
         datacfg.read(cfgpath)
         cfg = datacfg[section]
 
-        self.tileidfolder = os.path.join(dataroot, "tileids")
+        self.country = country
+        if self.country is None:
+            self.tileidfolder = os.path.join(dataroot, "tileids")
+        else:
+            self.tileidfolder = os.path.join(dataroot, "tileids/" + self.country + "/tileids")
         self.datadir = os.path.join(dataroot, cfg["datadir"])
 
         assert 'pix10' in cfg.keys()
         assert 'nobs' in cfg.keys()
         assert 'nbands10' in cfg.keys()
-        assert 'nbands20' in cfg.keys()
-        assert 'nbands60' in cfg.keys()
 
         self.tiletable=cfg["tiletable"]
 
@@ -91,26 +94,25 @@ class Dataset():
 
         self.expected_shapes = self.calc_expected_shapes(int(cfg["pix10"]),
                                                          int(cfg["nobs"]),
-                                                         int(cfg["nbands10"]),
-                                                         int(cfg["nbands20"]),
-                                                         int(cfg["nbands60"])
+                                                         int(cfg["nbands10"])
                                                          )
 
 
         # expected datatypes as read from disk
-        self.expected_datatypes = (tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.int64)
+        self.expected_datatypes = (tf.float32, tf.float32, tf.float32, tf.int64)
 
-    def calc_expected_shapes(self, pix10, nobs, bands10, bands20, bands60):
-        pix20 = pix10 / 2;
-        pix60 = pix10 / 6;
+    def calc_expected_shapes(self, pix10, nobs, bands10):
         x10shape = (nobs, pix10, pix10, bands10)
-        x20shape = (nobs, pix20, pix20, bands20)
-        x60shape = (nobs, pix60, pix60, bands60)
         doyshape = (nobs,)
         yearshape = (nobs,)
         labelshape = (nobs, pix10, pix10)
 
-        return [x10shape, x20shape, x60shape, doyshape, yearshape, labelshape]
+        print('x10shape: ', x10shape)
+        print('doyshape: ', doyshape)
+        print('yearshape: ', yearshape)
+        print('labelshape: ', labelshape)
+
+        return [x10shape, doyshape, yearshape, labelshape]
 
     def transform_labels(self,feature):
         """
@@ -118,32 +120,49 @@ class Dataset():
         2. perform label lookup as stored label ids might be not sequential labelid:[0,3,4] -> dimid:[0,1,2]
         """
 
-        x10, x20, x60, doy, year, labels = feature
+        x10, doy, year, labels = feature
 
         # take first label time [46,24,24] -> [24,24]
         # labels are not supposed to change over the time series
         #labels = labels[0]
+        #print('unique_labels: ', tf.unique(tf.stack(tf.reshape(labels, -1))))
         labels = self.id_lookup_table.lookup(labels)
 
-        return x10, x20, x60, doy, year, labels
+        return x10, doy, year, labels
 
     def normalize(self, feature):
-
-        x10, x20, x60, doy, year, labels = feature
-        x10 = tf.scalar_mul(1e-4, tf.cast(x10, tf.float32))
-        x20 = tf.scalar_mul(1e-4, tf.cast(x20, tf.float32))
-        x60 = tf.scalar_mul(1e-4, tf.cast(x60, tf.float32))
-
+        """
+        Normalizes between 0 and 1.
+        """ 
+        x10, doy, year, labels = feature
+        
         doy = tf.cast(doy, tf.float32) / 365
-
         # year = (2016 - tf.cast(year, tf.float32)) / 2017
         year = tf.cast(year, tf.float32) - 2016
+        
+        if self.country in ['ghana', 'southsudan', 'germany']:
+            S2_BAND_MEANS = { 'ghana': tf.constant([2620.00, 2519.89, 2630.31, 2739.81, 3225.22, 3562.64, 3356.57, 3788.05, 2915.40, 2102.65]),
+                              'southsudan': tf.constant([2119.15, 2061.95, 2127.71, 2277.60, 2784.21, 3088.40, 2939.33, 3308.03, 2597.14, 1834.81]),
+                              'germany': tf.constant([1991.37, 2026.92, 2136.22, 6844.82, 9951.98, 11638.58, 3664.66, 12375.27, 7351.99, 5027.96, 0., 0., 0.])}
 
-        return x10, x20, x60, doy, year, labels
+            S2_BAND_STDS = { 'ghana': tf.constant([2171.62, 2085.69, 2174.37, 2084.56, 2058.97, 2117.31, 1988.70, 2099.78, 1209.48, 918.19]),
+                             'southsudan': tf.constant([2113.41, 2026.64, 2126.10, 2093.35, 2066.81, 2114.85, 2049.70, 2111.51, 1320.97, 1029.58]),
+                             'germany': tf.constant([1943.62, 1755.82, 1841.09, 5703.38, 5104.90, 5136.54, 1663.27, 5125.05, 3682.57, 3273.71, 10000., 10000., 10000.])}
+
+            band_means = S2_BAND_MEANS[self.country]
+            band_stds = S2_BAND_STDS[self.country]
+
+            x10 = tf.cast(x10, tf.float32)
+            x10 = tf.divide( tf.subtract( x10, tf.reshape(band_means, shape=[1, 1, 1, -1]) ), tf.reshape(band_stds, shape=[1, 1, 1, -1]) )
+
+        else:
+            x10 = tf.scalar_mul(1e-4, tf.cast(x10, tf.float32))
+
+        return x10, doy, year, labels
 
     def augment(self, feature):
 
-        x10, x20, x60, doy, year, labels = feature
+        x10, doy, year, labels = feature
 
         ## Flip UD
 
@@ -152,8 +171,6 @@ class Dataset():
 
         # flip
         x10 = tf.cond(condition, lambda: tf.reverse(x10, axis=[1]), lambda: x10)
-        x20 = tf.cond(condition, lambda: tf.reverse(x20, axis=[1]), lambda: x20)
-        x60 = tf.cond(condition, lambda: tf.reverse(x60, axis=[1]), lambda: x60)
         labels = tf.cond(condition, lambda: tf.reverse(labels, axis=[1]), lambda: labels)
 
 
@@ -164,11 +181,9 @@ class Dataset():
 
         # flip
         x10 = tf.cond(condition, lambda: tf.reverse(x10, axis=[2]), lambda: x10)
-        x20 = tf.cond(condition, lambda: tf.reverse(x20, axis=[2]), lambda: x20)
-        x60 = tf.cond(condition, lambda: tf.reverse(x60, axis=[2]), lambda: x60)
         labels = tf.cond(condition, lambda: tf.reverse(labels, axis=[2]), lambda: labels)
 
-        return x10, x20, x60, doy, year, labels
+        return x10, doy, year, labels
 
 
     def temporal_sample(self, feature):
@@ -180,7 +195,7 @@ class Dataset():
         if n is None:
             return feature
 
-        x10, x20, x60, doy, year, labels = feature
+        x10, doy, year, labels = feature
 
         # data format 1, 2, 1, 2, -1,-1,-1
         # sequence lengths indexes are negative values.
@@ -194,21 +209,19 @@ class Dataset():
         shuffled_range = tf.random_shuffle(tf.range(max_obs))[0:n]
 
         idxs = -tf.nn.top_k(-shuffled_range, k=n).values
-
+        print('idxs: ', idxs)
         x10 = tf.gather(x10, idxs)
-        x20 = tf.gather(x20, idxs)
-        x60 = tf.gather(x60, idxs)
         doy = tf.gather(doy, idxs)
         year = tf.gather(year, idxs)
 
-        return x10, x20, x60, doy, year, labels
+        return x10, doy, year, labels
 
     def get_ids(self, partition, fold=0):
 
         def readids(path):
             with open(path, 'r') as f:
                 lines = f.readlines()
-            return [int(l.replace("\n", "")) for l in lines]
+            return [l.replace("\n", "") for l in lines]
 
         traintest = "{partition}_fold{fold}.tileids"
         eval = "{partition}.tileids"
@@ -233,10 +246,9 @@ class Dataset():
 
         # set of ids as present in database of given partition (train/test/eval) and fold (0-9)
         allids = self.get_ids(partition=partition, fold=fold)
-
+       
         # set of ids present in local folder (e.g. 1.tfrecord)
         tiles = os.listdir(self.datadir)
-
         if tiles[0].endswith(".gz"):
             compression = "GZIP"
             ext = ".tfrecord.gz"
@@ -244,7 +256,7 @@ class Dataset():
             compression = ""
             ext = ".tfrecord"
 
-        downloaded_ids = [int(t.replace(".gz", "").replace(".tfrecord", "")) for t in tiles]
+        downloaded_ids = [t.replace(".gz", "").replace(".tfrecord", "") for t in tiles]
 
         # intersection of available ids and partition ods
         if overwrite_ids is None:
@@ -252,7 +264,6 @@ class Dataset():
         else:
             print "overwriting data ids! due to manual input"
             ids = overwrite_ids
-
 
         filenames = [os.path.join(self.datadir, str(id) + ext) for id in ids]
 
@@ -320,9 +331,7 @@ def main():
 
     with tf.Session() as sess:
         sess.run([iterator.initializer, tf.tables_initializer()])
-        x10, x20, x60, doy, year, labels = sess.run(iterator.get_next())
-        print x10.shape
-
+        x10, doy, year, labels = sess.run(iterator.get_next())
 
 if __name__ == "__main__":
     main()

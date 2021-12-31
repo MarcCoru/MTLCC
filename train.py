@@ -3,6 +3,9 @@ import os
 from Dataset import Dataset
 import argparse
 import datetime
+import pdb
+
+from tensorflow import ConfigProto
 
 MODEL_GRAPH_NAME = "graph.meta"
 TRAINING_IDS_IDENTIFIER = "train"
@@ -22,7 +25,9 @@ graph_created_flag = False
 
 
 def main(args):
-    if args.verbose: print "setting visible GPU {}".format(args.gpu)
+    tf.reset_default_graph()
+
+    if args.verbose: print("setting visible GPU {}".format(args.gpu))
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"  # see issue #152
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
@@ -50,9 +55,9 @@ def setupDatasets(args):
 
 
     datasets_dict=dict()
-    for section in ['2016','2017']:
+    for section in ['2016']:
         datasets_dict[section]=dict()
-        dataset = Dataset(datadir=args.datadir, verbose=True, temporal_samples=args.temporal_samples, section=section)
+        dataset = Dataset(datadir=args.datadir, verbose=True, temporal_samples=args.temporal_samples, section=section, country=args.country)
         for partition in [TRAINING_IDS_IDENTIFIER, TESTING_IDS_IDENTIFIER]:
             datasets_dict[section][partition] = dict()
             tfdataset, _, _, filenames = dataset.create_tf_dataset(partition,
@@ -66,7 +71,6 @@ def setupDatasets(args):
             datasets_dict[section][partition]["iterator"]=iterator
             datasets_dict[section][partition]["filenames"]=filenames
             #dataset_list.append({'sec':section,'id':identifier,'iterator':iterator,'filenames':filenames})
-
     return datasets_dict
 
 
@@ -91,7 +95,7 @@ def train(args, datasets):
 
     graph = os.path.join(args.modeldir, MODEL_GRAPH_NAME)
     if not graph_created_flag:
-        if args.verbose: print "importing graph from {}".format(graph)
+        if args.verbose: print("importing graph from {}".format(graph))
         dir(tf.contrib)  # see https://github.com/tensorflow/tensorflow/issues/10130
         _ = tf.train.import_meta_graph(graph)
 
@@ -119,7 +123,7 @@ def train(args, datasets):
             for partition in datasets[dataset].keys():
                 handle = datasets[dataset][partition]["handle"]
                 writer = datasets[dataset][partition]["writer"]
-
+                #print('handle: ', handle.shape, handle)
                 ops = [tf.summary.merge_all(), cross_entropy_op, overall_accuracy_op]
                 sum, xe, oa = sess.run(ops, feed_dict={iterator_handle_op: handle, is_train_op: True})
                 writer.add_summary(sum, samples)
@@ -139,14 +143,15 @@ def train(args, datasets):
 
     def save(saver, step, sess, checkpoint):
         saver.save(sess, checkpoint, global_step=step)
-        print "saving checkpoint step {}".format(step)
+        print("saving checkpoint step {}".format(step))
 
     saver = tf.train.Saver(max_to_keep=args.max_models_to_keep, keep_checkpoint_every_n_hours=args.save_every_n_hours,
                            save_relative_paths=True)
 
     checkpoint = os.path.join(args.modeldir, MODEL_CHECKPOINT_NAME)
 
-    config = tf.ConfigProto()
+    config = ConfigProto()
+    #config = tf.ConfigProto(use_per_session_threads=True)
     config.gpu_options.allow_growth = args.allow_growth
     with tf.Session(config=config) as sess:
         sess.run([tf.global_variables_initializer(), tf.local_variables_initializer(), tf.tables_initializer()])
@@ -165,47 +170,46 @@ def train(args, datasets):
                 writer = tf.summary.FileWriter(os.path.join(args.modeldir, summaryname), sess.graph)
                 datasets[dataset][partition]["writer"] = writer
 
-                print "initializing dataset {}, partition {}".format(dataset,partition)
+                print("initializing dataset {}, partition {}".format(dataset,partition))
                 sess.run([iterator.initializer])
 
         latest_ckpt = tf.train.latest_checkpoint(args.modeldir)
         if latest_ckpt is not None:
-            print "restoring from " + latest_ckpt
+            print("restoring from " + latest_ckpt)
             saver.restore(sess, latest_ckpt)
 
         step, samples = sess.run([global_step_op, samples_seen_op])
         current_epoch = samples / float(num_samples)
         while current_epoch <= args.epochs:
-            try:
+            #try:
 
-                for dataset in args.train_on:
-                    # normal training operation
-                    print "{} {} training step {}...".format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),dataset, step)
+            for dataset in args.train_on:
+                # normal training operation
+                print("{} {} training step {}...".format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),dataset, step))
 
-                    feed_dict = {iterator_handle_op: datasets[dataset]["train"]["handle"], is_train_op: True}
-                    if args.learning_rate is not None:
-                        feed_dict[learning_rate_op] = args.learning_rate
+                feed_dict = {iterator_handle_op: datasets[dataset]["train"]["handle"], is_train_op: True}
+                if args.learning_rate is not None:
+                     feed_dict[learning_rate_op] = args.learning_rate
 
-                    sess.run(train_op, feed_dict=feed_dict)
+                sess.run(train_op, feed_dict=feed_dict)
 
+                # write summary
+                if step % args.summary_frequency == 0:
+                    current_epoch = write_summaries(sess, datasets)
 
-                    # write summary
-                    if step % args.summary_frequency == 0:
-                        current_epoch = write_summaries(sess, datasets)
+                # write checkpoint
+                if step % args.save_frequency == 0:
+                    save(saver, step, sess, checkpoint)
+                    # print "saving to " + checkpoint
+                    # saver.save(sess, checkpoint, global_step=step)
 
-                    # write checkpoint
-                    if step % args.save_frequency == 0:
-                        save(saver, step, sess, checkpoint)
-                        # print "saving to " + checkpoint
-                        # saver.save(sess, checkpoint, global_step=step)
-
-                    step += 1  # keep local step counter
-
+                step += 1  # keep local step counter
 
 
-            except KeyboardInterrupt:
-                print "Training aborted at step {}".format(step)
-                break
+
+            #except KeyboardInterrupt:
+            #    print "Training aborted at step {}".format(step)
+            #    break
 
         # if loop ends or any caught exception
         write_summaries(sess, datasets)
@@ -221,7 +225,7 @@ if __name__ == "__main__":
                         help='directory containing the data (defaults to environment variable $datadir)')
     parser.add_argument('-g', '--gpu', type=str, default="0", help='GPU')
     parser.add_argument('-d','--train_on', type=str, default="2016",nargs='+', help='Dataset partition to train on. Datasets are defined as sections in dataset.ini in datadir')
-    parser.add_argument('-b', '--batchsize', type=int, default=16, help='batchsize')
+    parser.add_argument('-b', '--batchsize', type=int, default=2, help='batchsize')
     parser.add_argument('-v', '--verbose', action="store_true", help='verbosity')
     # parser.add_argument('-o', '--overwrite', action="store_true", help='overwrite graph. may lead to problems with checkpoints compatibility')
     parser.add_argument('-s', '--shuffle', type=bool, default=True, help="batch shuffling")
@@ -239,9 +243,10 @@ if __name__ == "__main__":
                         help="overwrite learning rate. Required placeholder named 'learning_rate' in model")
     parser.add_argument('--save_every_n_hours', type=int, default=1, help="save checkpoint every n hours")
     parser.add_argument('--queue_capacity', type=int, default=256, help="Capacity of queue")
-    parser.add_argument('--allow_growth', type=bool, default=False, help="Allow dynamic VRAM growth of TF")
+    parser.add_argument('--allow_growth', type=bool, default=True, help="Allow dynamic VRAM growth of TF")
     parser.add_argument('--limit_batches', type=int, default=-1,
                         help="artificially reduce number of batches to encourage overfitting (for debugging)")
+    parser.add_argument('--country', type=str, default=None, help="Country to use for data input")
 
     args = parser.parse_args()
 

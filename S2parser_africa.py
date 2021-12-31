@@ -10,10 +10,6 @@ class S2parser():
         self.feature_format= {
             'x10/data': tf.FixedLenFeature([], tf.string),
             'x10/shape': tf.FixedLenFeature([4], tf.int64),
-            'x20/data': tf.FixedLenFeature([], tf.string),
-            'x20/shape': tf.FixedLenFeature([4], tf.int64),
-            'x60/data': tf.FixedLenFeature([], tf.string),
-            'x60/shape': tf.FixedLenFeature([4], tf.int64),
             'dates/doy': tf.FixedLenFeature([], tf.string),
             'dates/year': tf.FixedLenFeature([], tf.string),
             'dates/shape': tf.FixedLenFeature([1], tf.int64),
@@ -23,14 +19,12 @@ class S2parser():
 
         return None
 
-    def write(self, filename, x10, x20, x60, doy, year, labels):
+    def write(self, filename, x10, doy, year, labels):
         # https://stackoverflow.com/questions/39524323/tf-sequenceexample-with-multidimensional-arrays
 
         writer = tf.python_io.TFRecordWriter(filename)
 
         x10=x10.astype(np.int64)
-        x20=x20.astype(np.int64)
-        x60=x60.astype(np.int64)
         doy=doy.astype(np.int64)
         year=year.astype(np.int64)
         labels=labels.astype(np.int64)
@@ -39,10 +33,6 @@ class S2parser():
         feature={
             'x10/data' : tf.train.Feature(bytes_list=tf.train.BytesList(value=[x10.tobytes()])),
             'x10/shape': tf.train.Feature(int64_list=tf.train.Int64List(value=x10.shape)),
-            'x20/data' : tf.train.Feature(bytes_list=tf.train.BytesList(value=[x20.tobytes()])),
-            'x20/shape': tf.train.Feature(int64_list=tf.train.Int64List(value=x20.shape)),
-            'x60/data' : tf.train.Feature(bytes_list=tf.train.BytesList(value=[x60.tobytes()])),
-            'x60/shape': tf.train.Feature(int64_list=tf.train.Int64List(value=x60.shape)),
             'labels/data': tf.train.Feature(bytes_list=tf.train.BytesList(value=[labels.tobytes()])),
             'labels/shape': tf.train.Feature(int64_list=tf.train.Int64List(value=labels.shape)),
             'dates/doy': tf.train.Feature(bytes_list=tf.train.BytesList(value=[doy.tobytes()])),
@@ -74,15 +64,12 @@ class S2parser():
         # decode and reshape x10
         x10 = tf.reshape(tf.decode_raw(feature['x10/data'], tf.int64),tf.cast(feature['x10/shape'], tf.int32))
 
-        x20 = tf.reshape(tf.decode_raw(feature['x20/data'], tf.int64), tf.cast(feature['x20/shape'], tf.int32))
-        x60 = tf.reshape(tf.decode_raw(feature['x60/data'], tf.int64), tf.cast(feature['x60/shape'], tf.int32))
-
         doy = tf.reshape(tf.decode_raw(feature['dates/doy'], tf.int64), tf.cast(feature['dates/shape'], tf.int32))
         year = tf.reshape(tf.decode_raw(feature['dates/year'], tf.int64), tf.cast(feature['dates/shape'], tf.int32))
 
         labels = tf.reshape(tf.decode_raw(feature['labels/data'], tf.int64), tf.cast(feature['labels/shape'], tf.int32))
 
-        return x10, x20, x60, doy, year, labels
+        return x10, doy, year, labels
 
     def read(self,filenames):
         """ depricated! """
@@ -104,15 +91,12 @@ class S2parser():
         # decode and reshape x10
         x10 = tf.reshape(tf.decode_raw(feature['x10/data'], tf.int64),tf.cast(feature['x10/shape'], tf.int32))
 
-        x20 = tf.reshape(tf.decode_raw(feature['x20/data'], tf.int64), tf.cast(feature['x20/shape'], tf.int32))
-        x60 = tf.reshape(tf.decode_raw(feature['x60/data'], tf.int64), tf.cast(feature['x60/shape'], tf.int32))
-
         doy = tf.reshape(tf.decode_raw(feature['dates/doy'], tf.int64), tf.cast(feature['dates/shape'], tf.int32))
         year = tf.reshape(tf.decode_raw(feature['dates/year'], tf.int64), tf.cast(feature['dates/shape'], tf.int32))
 
         labels = tf.reshape(tf.decode_raw(feature['labels/data'], tf.int64), tf.cast(feature['labels/shape'], tf.int32))
 
-        return x10, x20, x60, doy, year, labels
+        return x10, doy, year, labels
 
     def tfrecord_to_pickle(self,tfrecordname,picklename):
         import cPickle as pickle
@@ -162,8 +146,6 @@ def test():
 
     # create dummy dataset
     x10 = (np.random.rand(6,48,48,6)*1e3).astype(np.int64)
-    x20 = (np.random.rand(6,24,24,6)*1e3).astype(np.int64)
-    x60 = (np.random.rand(6,7,7,6)*1e3).astype(np.int64)
     labels = (np.random.rand(6,24,24)*1e3).astype(np.int64)
     doy = (np.random.rand(6)*1e3).astype(np.int64)
     year = (np.random.rand(6)*1e3).astype(np.int64)
@@ -171,13 +153,13 @@ def test():
     # init parser
     parser=S2parser()
 
-    parser.write(filename, x10,x20,x60,doy, year,labels)
+    parser.write(filename, x10, doy, year, labels)
 
-    x10_, x20_, x60_, doy_, year_, labels_ = read_and_return(filename)
+    x10_, doy_, year_, labels_ = read_and_return(filename)
 
     # test if wrote and read data is the same
     print("TEST")
-    if np.all(x10_==x10) and np.all(x20_==x20) and np.all(x60_==x60) and np.all(labels_==labels) and np.all(doy_==doy) and np.all(year_==year):
+    if np.all(x10_==x10) and np.all(labels_==labels) and np.all(doy_==doy) and np.all(year_==year):
         print("PASSED")
     else:
         print("NOT PASSED")
